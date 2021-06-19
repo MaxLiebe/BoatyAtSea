@@ -4,14 +4,18 @@ class Fleet {
   float gravity;
   int maxX;
   int maxZ;
-  Fleet(Sea sea, float gravity) {
+  Fleet(Sea sea, float gravity, PImage flag) {
     boaties = new ArrayList<PaperBoat>();
     int gridSize = sea.getGridSize();
     int maxHeight = sea.getMaxHeight();
     maxX = sea.getXSize();
     maxZ = sea.getZSize();
-    for (int i = 0; i < 10; i++) {
-      boaties.add(new PaperBoat(new PVector(0+i*100, 200, random(0, 400)), gridSize, maxHeight, maxX, maxZ, gravity));
+    for (int i = 0; i < 20; i++) {
+      boaties.add(new PaperBoat(new PVector(
+        randomGaussian() * maxX / 8 + maxX / 2, 
+        100,  
+        randomGaussian() * maxZ / 8 + maxZ / 2), 
+        gridSize, maxHeight, maxX, maxZ, gravity, flag));
     }
     this.sea = sea;
     this.gravity = gravity;
@@ -26,10 +30,10 @@ class Fleet {
   void update() {
     float noiseField[][] = sea.getNoiseField();
     for (PaperBoat boat : boaties) {
-      boat.applyForce(seperate(boat).mult(1));
-      boat.applyForce(align(boat).mult(0.1));
-      boat.applyForce(cohesion(boat).mult(0.001));
-      boat.applyForce(borders(boat).mult(5));
+      boat.applyHorizontalForce(seperate(boat).mult(2.5));
+      boat.applyHorizontalForce(align(boat).mult(0.1));
+      boat.applyHorizontalForce(cohesion(boat).mult(0.001));
+      boat.applyHorizontalForce(borders(boat).mult(5));
       boat.update(noiseField);
     }
   }
@@ -40,7 +44,7 @@ class Fleet {
     PVector average = new PVector(0, 0);
     for (PaperBoat other : boaties) {
       float distance = PVector.dist(boat.getHorizontalPosition(), other.getHorizontalPosition());
-      if (distance > 0 && distance < 150) {
+      if (distance > 0 && distance < 250) {
         counter++;
         PVector difference = PVector.sub(boat.getHorizontalPosition(), other.getHorizontalPosition());
         difference.normalize();
@@ -102,7 +106,7 @@ class Fleet {
 
   //Behaviour in relation to the borders of the map steer away when getting close
   PVector borders(PaperBoat boat) {
-    PVector keepFromCrashing = new PVector(0, 0, 0); //has a vector that is edited when a bird nearly hits the border
+    PVector keepFromCrashing = new PVector(0, 0, 0); //has a vector that is edited when a boat nearly hits the border
 
     //right border
     if (dist(boat.getHorizontalPosition().x, boat.getHorizontalPosition().y, maxX, boat.getHorizontalPosition().y) < 100) {

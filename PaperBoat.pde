@@ -7,30 +7,39 @@ class PaperBoat {
   int maxX;
   int maxZ;
   float gravity;
-  float maxVel;
-  float maxAcc;
+  float maxHorVel = 0.8;
+  float maxVerVel = 0.4;
+  float maxAcc = 2;
   float rangeInfluence;
   float r;
 
-  PaperBoat(PVector pos, int gridSize, int maxHeight, int maxX, int maxZ, float gravity) {
+  ParticleSystem system;
+  Flag flag;
+
+  PaperBoat(PVector pos, int gridSize, int maxHeight, int maxX, int maxZ, float gravity, PImage flagImage) {
     this.pos = pos; 
     this.gridSize = gridSize;
     this.maxHeight = maxHeight;
     this.maxX =  maxZ;
     this.gravity = gravity;
-    vel=new PVector(random(-1,1), 0, random(-1,1)); //gives the bird a random starting velocity
+    vel=new PVector(random(-1,1), 0, random(-1,1)); //gives the boat a random starting velocity
     acc=new PVector(0, 0);
-    maxVel= 0.8; 
-    maxAcc=2;
+
+    system = new ParticleSystem(new PVector(0,0,0), ParticleSystem.HYDRO, 1);
+    flag = new Flag(flagImage, 0.2, 0);
   }
+
   void show() {
-    stroke(1);
     pushMatrix();
     translate(pos.x+5*scalar, pos.y, pos.z);
     rotateY(atan2(vel.x,vel.z)+HALF_PI);
+    system.show();
+    flag.show();
+    strokeWeight(1);
+    rotateZ(angle);
     translate(-5 * scalar, 0, 0);
     rotateX(PI);
-
+    stroke(1);
     fill(255);
 
     //middle triangle
@@ -45,69 +54,73 @@ class PaperBoat {
     vertex(-10 * scalar, -10 * scalar, 0 * scalar);
     vertex(5 * scalar, -6 * scalar, 5 * scalar);
     vertex(0 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    endShape(CLOSE);
 
     //left middle triangle
     beginShape();
     vertex(0 * scalar, 0 * scalar, 0 * scalar);
     vertex(5 * scalar, -6 * scalar, 5 * scalar);
     vertex(10 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    endShape(CLOSE);
 
     //left right triangle
     beginShape();
     vertex(5 * scalar, -6 * scalar, 5 * scalar);
     vertex(20 * scalar, -10 * scalar, 0 * scalar);
     vertex(10 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    endShape(CLOSE);
 
     //right left triangle
     beginShape();
     vertex(-10 * scalar, -10 * scalar, 0 * scalar);
     vertex(5 * scalar, -6 * scalar, -5 * scalar);
     vertex(0 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    endShape(CLOSE);
 
     //right middle triangle
     beginShape();
     vertex(0 * scalar, 0 * scalar, 0 * scalar);
     vertex(5 * scalar, -6 * scalar, -5 * scalar);
     vertex(10 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    endShape(CLOSE);
 
     //right right triangle
     beginShape();
     vertex(5 * scalar, -6 * scalar, -5 * scalar);
-    vertex(20 * scalar, -10 * scalar, 0 * scalar);
     vertex(10 * scalar, 0 * scalar, 0 * scalar);
-    endShape();
+    vertex(20 * scalar, -10 * scalar, 0 * scalar);
+    endShape(CLOSE);
     popMatrix();
   }
 
 void update(float[][] noiseField){
     vel.add(acc);
-    vel.limit(maxVel);
+    vel.limit(maxHorVel);
     pos.add(vel);
-    acc.mult(0);
+    
+    system.update();
+    flag.update();
 
     int xAft = (int)(pos.x / gridSize);
     int zAft = (int)(pos.z / gridSize);
+    constrain(xAft, 0, noiseField[0].length);
+    constrain(zAft, 0, noiseField.length);
     float aftHeight = noiseField[xAft][zAft] * maxHeight;
 
-    int x = (int)((pos.x + 20 * scalar) / gridSize);
-    int z = (int)(pos.z / gridSize);
+    PVector frontPos=PVector.add(pos.copy(), vel.copy().normalize().mult(15*scalar));
+    int x = (int)(constrain((frontPos.x), 0, maxX) / gridSize);
+    int z = (int)(constrain(frontPos.z,0,maxZ)/ gridSize);
     float frontHeight = noiseField[x][z] * maxHeight;
-    angle = PVector.angleBetween(new PVector(pos.x, aftHeight), new PVector(pos.x + 20 * scalar, frontHeight));
-    pos.y = aftHeight;
+    angle=PVector.angleBetween(new PVector(frontPos.x, frontHeight), new PVector(pos.x, aftHeight));
+    pos.y=(aftHeight+frontHeight)/2;
+
+    acc.mult(0);
 }
+
 //apply a force to the acceleration
-  void applyForce(PVector force) {
+  void applyHorizontalForce(PVector force) {
     acc.add(new PVector(force.x, 0, force.y));
   }
-
-float calculateBuoyancyForce(){
-    return 1;
-}
 
 PVector getHorizontalPosition() {
     return new PVector(pos.x, pos.z);
@@ -115,15 +128,8 @@ PVector getHorizontalPosition() {
 PVector getHorizontalVelocity() {
     return new PVector(vel.x, vel.z);
 }
-void addHorizontalVelocity(PVector newVel){
-    vel.add(new PVector(newVel.x, 0, newVel.y));
-}
-void addVerticalVelocity(float newVel){
-    vel.add(new PVector(0, newVel, 0));
-}
 
 float getMaxAcceleration(){
     return maxAcc;
 }
-
 }
