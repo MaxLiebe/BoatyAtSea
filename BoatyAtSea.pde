@@ -1,40 +1,44 @@
-import peasy.*;
-Fleet fleet;
-Sea sea;
-Ground ground;
+/*
+ Algorithms in Create Final Assignment
+ By Ysbrand Burgstede (s2580829) & Max Liebe (s2506890)
+ 
+ Flocking explanation example from https://gamedevelopment.tutsplus.com/tutorials/3-simple-rules-of-flocking-behaviors-alignment-cohesion-and-separation--gamedev-3444
+
+ Image resources:
+ background: https://assetstore.unity.com/packages/2d/textures-materials/sky/farland-skies-low-poly-64604
+ flag of Achterhoek: https://nl.wikipedia.org/wiki/Vlag_van_de_Achterhoek
+ pirate flag: https://wereldvlaggen.nl/product/vlag-pirate-flag-with-2-swords/
+
+ DISCLAIMER: Both flags were chosen arbitrarily without any malicious intentions
+ */
+
 PImage bg;
 PImage playerFlag;
 PImage enemyFlag;
-PeasyCam henk;
-Player player;
+
+Environment env; //environment that holds the sea and all the objects
+
 void setup() {
-  enemyFlag = loadImage("flag.jpg");
-  playerFlag = loadImage("arr.png");
-  float gravity=1;
-  sea = new Sea(width, height);
-  int maxX = sea.getXSize();
-  int maxZ = sea.getZSize();
-  player = new Player(new PVector(
-        randomGaussian() * maxX / 8 + maxX / 2, 
-        100,  
-        randomGaussian() * maxZ / 8 + maxZ / 2), 
-        sea.getGridSize(), sea.getMaxHeight(), maxX, maxZ, playerFlag,
-        color(100));
-  fleet = new Fleet(sea, enemyFlag, player);
-  ground = new Ground(maxX, maxZ);
   bg = loadImage("background.png");
-  henk= new PeasyCam(this, 0, 0, 0, 50);
-  //camera(626.2602, 556.6528, -618.7975, 607.8652, 157.90466, 289.3832, 0, -1, 0);
+  playerFlag = loadImage("arr.png");
+  enemyFlag = loadImage("flag.jpg");
+
+  env = new Environment(getMatrix(), width, height);
+
+  camera(626, 556, -618, 607, 157, 289, 0, -1, 0); //orient the camera
   size(1200, 800, P3D);
+  sphereDetail(10);
 }
 
 void draw() {
   background(bg);
-  sea.processWaves();
-  sea.show();
-  fleet.update();
-  fleet.show();
-  ground.show();
-  player.update(sea.getNoiseField());
-  player.show();
+  env.update();
+  env.show();
 }  
+
+void keyPressed() {
+  env.keyEvent(key, true);
+}
+void keyReleased() {
+  env.keyEvent(key, false);
+}

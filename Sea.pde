@@ -1,28 +1,30 @@
 class Sea {
-  int gridSize = 20;
-  int rows;
-  int cols;
-  int maxHeight = 250;
+  static final int gridSize = 20;
+  static final int maxHeight = 250;
+  static final int seaDepth = 30;
 
-  int seaDepth = 30;
-
-  float noiseScale = 0.05;
-  float noiseStep = 0.002;
+  static final float noiseScale = 0.05;
+  static final float noiseStep = 0.002;
   float elapsedTime = 0;
   float[][] noiseField;
 
-  color blueSea = color(22, 68, 125);
-  color seaReflection = color(130, 176, 232);
+  color blueSea;
+  color seaReflection;
 
-  Sea(int w, int h) {
+  int rows;
+  int cols;
+
+  Sea(int envWidth, int envHeight) {
     //calculate the amount of rows and collumns based on screen size
-    rows = height / gridSize;
-    cols = width / gridSize;
+    rows = envHeight / gridSize;
+    cols = envWidth / gridSize;
     noiseField = new float[cols][rows];
+    blueSea = color(22, 68, 125, 160);
+    seaReflection = color(130, 176, 232, 200);
   }
 
   void processWaves() {
-    //shift all the noise values
+    //move the wave by shifting the noise values
     for (int x = 0; x < cols; x++) {
       for (int y = 0; y < rows; y++) {
         noiseField[x][y] = noise(x * noiseScale + elapsedTime, y * noiseScale + elapsedTime, elapsedTime);
@@ -72,12 +74,12 @@ class Sea {
   }
 
   void drawZWalls(int x, int z) {
-      beginShape();
-      vertex(x * gridSize, noiseField[x][z] * maxHeight, z * gridSize);
-      vertex((x + 1) * gridSize, noiseField[x + 1][z] * maxHeight, z * gridSize);
-      vertex((x + 1) * gridSize, seaDepth, z * gridSize);
-      vertex(x * gridSize, seaDepth, z * gridSize);
-      endShape();
+    beginShape();
+    vertex(x * gridSize, noiseField[x][z] * maxHeight, z * gridSize);
+    vertex((x + 1) * gridSize, noiseField[x + 1][z] * maxHeight, z * gridSize);
+    vertex((x + 1) * gridSize, seaDepth, z * gridSize);
+    vertex(x * gridSize, seaDepth, z * gridSize);
+    endShape();
   }
 
   int getGridSize() {
@@ -98,5 +100,13 @@ class Sea {
 
   float[][] getNoiseField() {
     return noiseField;
+  }
+
+  //generate a normally distributed position on the sea
+  PVector generateRandomPosition() {
+    return new PVector(
+        randomGaussian() * getXSize() / 8 + getXSize() / 2,
+        maxHeight / 2, 
+        randomGaussian() * getZSize() / 8 + getZSize() / 2);
   }
 }
