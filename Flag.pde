@@ -1,6 +1,7 @@
 class Flag {
     PImage flagImage;
     Segment[] segments = new Segment[5];
+    int time=(int)random(0,100);
     
     Flag(PImage flagImage, float angularVelocity, float torque) {
         //initialize all segments of the flower
@@ -27,6 +28,7 @@ class Flag {
 
         //update last
         segments[count - 1].update(segments[count - 2].angularVelocity, 0);
+        time+=1;
     }
 
     void show(){
@@ -36,11 +38,12 @@ class Flag {
         //stem + leaves
         for(int i = 0; i < segments.length; i++) {
             strokeWeight(4);
-            rotate(segments[i].totalRotation);
+            rotateZ(segments[i].totalRotation);
             line(0, 0, 0, 10);
             translate(0, 10);
         }
-
+        rotateY(map(noise(time*0.001),0,1,-1,1));
+        scale(1,-1);
         image(flagImage, 0, 0, 22, 15);
         popMatrix();
     }

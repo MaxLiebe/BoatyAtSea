@@ -1,30 +1,31 @@
 class PaperBoat {
   PVector pos, vel, acc;
   float scalar=4;
-  float angle;
+  float pitch;
+  float yaw;
   int gridSize;
   int maxHeight;
   int maxX;
   int maxZ;
   float gravity;
   float maxHorVel = 0.8;
-  float maxVerVel = 0.4;
+  float maxVerVel = 1;
   float maxAcc = 2;
   float rangeInfluence;
   float r;
 
   ParticleSystem system;
   Flag flag;
+  color c;
 
-  PaperBoat(PVector pos, int gridSize, int maxHeight, int maxX, int maxZ, float gravity, PImage flagImage) {
-    this.pos = pos; 
+  PaperBoat(PVector pos, PVector vel, int gridSize, int maxHeight, int maxX, int maxZ, PImage flagImage, color c) {
+    this.pos = pos;
+    this.vel = vel; 
     this.gridSize = gridSize;
     this.maxHeight = maxHeight;
-    this.maxX =  maxZ;
-    this.gravity = gravity;
-    vel=new PVector(random(-1,1), 0, random(-1,1)); //gives the boat a random starting velocity
-    acc=new PVector(0, 0);
-
+    this.maxX = maxZ;
+    this.c = c;
+    acc = new PVector(0, 0);
     system = new ParticleSystem(new PVector(0,0,0), ParticleSystem.HYDRO, 1);
     flag = new Flag(flagImage, 0.2, 0);
   }
@@ -36,11 +37,12 @@ class PaperBoat {
     system.show();
     flag.show();
     strokeWeight(1);
-    rotateZ(angle);
-    translate(-5 * scalar, 0, 0);
     rotateX(PI);
+    // rotateX(PI + pitch);
+    // rotateZ(yaw);
+    translate(-5 * scalar, 0, 0);
     stroke(1);
-    fill(255);
+    fill(c);
 
     //middle triangle
     beginShape();
@@ -101,35 +103,45 @@ void update(float[][] noiseField){
     system.update();
     flag.update();
 
-    int xAft = (int)(pos.x / gridSize);
-    int zAft = (int)(pos.z / gridSize);
-    constrain(xAft, 0, noiseField[0].length);
-    constrain(zAft, 0, noiseField.length);
-    float aftHeight = noiseField[xAft][zAft] * maxHeight;
-
-    PVector frontPos=PVector.add(pos.copy(), vel.copy().normalize().mult(15*scalar));
-    int x = (int)(constrain((frontPos.x), 0, maxX) / gridSize);
-    int z = (int)(constrain(frontPos.z,0,maxZ)/ gridSize);
-    float frontHeight = noiseField[x][z] * maxHeight;
-    angle=PVector.angleBetween(new PVector(frontPos.x, frontHeight), new PVector(pos.x, aftHeight));
-    pos.y=(aftHeight+frontHeight)/2;
-
+    pos.y += calculateStepToTarget(noiseField);
     acc.mult(0);
 }
 
+float calculateStepToTarget(float[][] noiseField){
+    float correctedX = pos.x / gridSize;
+    float correctedZ = pos.z / gridSize;
+    int x1 = floor(correctedX);
+    int x2 = ceil(correctedX);
+    int z1 = floor(correctedZ);
+    int z2 = ceil(correctedZ);
+    if(x1 > noiseField[0].length || x2 > noiseField[0].length) {
+      x1 = noiseField[0].length;
+      x2 = noiseField[0].length;
+    }
+    if(z1 > noiseField.length || z2 > noiseField.length) {
+      z1 = noiseField.length;
+      z2 = noiseField.length;
+    }
+    float targetHeight = ((noiseField[x2][z2] + noiseField[x1][z1]) / 2) * maxHeight;
+    PVector fromPos = new PVector(x2, noiseField[x2][z2], z2);
+    PVector toPos = new PVector(x1, noiseField[x1][z1], z1);
+    PVector direction = fromPos.copy().sub(toPos);
+
+  return sqrt(abs(pos.y - targetHeight)) * (pos.y > targetHeight ? -1 : 1);
+}
 //apply a force to the acceleration
   void applyHorizontalForce(PVector force) {
     acc.add(new PVector(force.x, 0, force.y));
   }
 
-PVector getHorizontalPosition() {
-    return new PVector(pos.x, pos.z);
-}
-PVector getHorizontalVelocity() {
-    return new PVector(vel.x, vel.z);
-}
+  PVector getHorizontalPosition() {
+      return new PVector(pos.x, pos.z);
+  }
+  PVector getHorizontalVelocity() {
+      return new PVector(vel.x, vel.z);
+  }
 
-float getMaxAcceleration(){
-    return maxAcc;
-}
+  float getMaxAcceleration(){
+      return maxAcc;
+  }
 }

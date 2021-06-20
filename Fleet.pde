@@ -1,10 +1,11 @@
+//Flocking explanation from voorbeeld van https://gamedevelopment.tutsplus.com/tutorials/3-simple-rules-of-flocking-behaviors-alignment-cohesion-and-separation--gamedev-3444
 class Fleet {
   ArrayList<PaperBoat> boaties;
   Sea sea;
-  float gravity;
+  Player player;
   int maxX;
   int maxZ;
-  Fleet(Sea sea, float gravity, PImage flag) {
+  Fleet(Sea sea, PImage flag, Player player) {
     boaties = new ArrayList<PaperBoat>();
     int gridSize = sea.getGridSize();
     int maxHeight = sea.getMaxHeight();
@@ -15,10 +16,12 @@ class Fleet {
         randomGaussian() * maxX / 8 + maxX / 2, 
         100,  
         randomGaussian() * maxZ / 8 + maxZ / 2), 
-        gridSize, maxHeight, maxX, maxZ, gravity, flag));
+        new PVector(random(-1, 1), 0, random(-1, 1)), //gives the boat a random starting velocity)
+        gridSize, maxHeight, maxX, maxZ, flag,
+        color(255)));
     }
     this.sea = sea;
-    this.gravity = gravity;
+    this.player = player;
   }
 
   void show() {
@@ -33,6 +36,7 @@ class Fleet {
       boat.applyHorizontalForce(seperate(boat).mult(2.5));
       boat.applyHorizontalForce(align(boat).mult(0.1));
       boat.applyHorizontalForce(cohesion(boat).mult(0.001));
+      boat.applyHorizontalForce(avoidPlayer(boat, player));
       boat.applyHorizontalForce(borders(boat).mult(5));
       boat.update(noiseField);
     }
@@ -139,5 +143,16 @@ class Fleet {
       keepFromCrashing.add(diff);
     }
     return keepFromCrashing;
+  }
+
+  PVector avoidPlayer(PaperBoat boat, Player player) {
+    PVector difference= new PVector(0, 0);
+    float distance = PVector.dist(boat.getHorizontalPosition(), player.getHorizontalPosition());
+    if (distance > 0 && distance < 2000) {
+      difference = PVector.sub(boat.getHorizontalPosition(), player.getHorizontalPosition());
+      difference.normalize();
+      difference.div(distance);
+    }
+    return difference;
   }
 }
